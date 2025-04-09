@@ -34,7 +34,9 @@
 
 
             ---------------- CODE EXAMPLE THAT GENERATES PATH INDICIES AND PATH ELEMENTS
-            function generateMerkleProof(tree, leafIndex) {
+	//see example in generateIndicesAndElements.js
+
+            function generateIndicesAndElements(tree, leafIndex) {
                 const pathElements = [];
                 const pathIndices = [];
 
