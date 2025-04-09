@@ -8,6 +8,74 @@
     - nullifier	        Private secret	                     Used for both nullifierHash and commitment (Generated randomly from user side)
     - commitment	    Poseidon(nullifier, 0)	             Inserted into Merkle tree leaf
 
+            --------------- PATH INDICIES and PATH ELEMENTS (explination is based on example. imagine that tree has 3 levels (8 leaf nodes) and I need proof of index 3 commitment)
+            We already have:
+                * A built Merkle tree (tree[level][i])
+                * The commitment at index 3
+                * The nullifier and nullifierHash (already computed)
+            Now you want:
+                * pathIndices: binary directions to go from the leaf to the root
+                * pathElements: the sibling hashes at each level needed to reconstruct the Merkle root
+
+            Steps:
+                * We're walking up the tree from the leaf at index 3.
+                * Tree depth = 3
+                * So we need:
+                    * 3 pathElements
+                    * 3 pathIndices (bit values)
+                At each level:
+                    * If you're a left child, your sibling is at index + 1, and pathIndex = 0
+                    * If you're a right child, your sibling is at index - 1, and pathIndex = 1
+
+            Level	     Node Index	    Sibling Index	   pathIndex	  pathElement
+             0	              3	              2	               1	        Leaf[2]
+             1	              1	              0	               1	   Hash(Leaf[0], Leaf[1])
+             2	              0	              1	               0	   Hash(Hashes of (4–7))
+
+
+            ---------------- CODE EXAMPLE THAT GENERATES PATH INDICIES AND PATH ELEMENTS
+            function generateMerkleProof(tree, leafIndex) {
+                const pathElements = [];
+                const pathIndices = [];
+
+                for (let level = 0; level < tree.length - 1; level++) {
+                    const levelNodes = tree[level];
+                    const siblingIndex = leafIndex ^ 1;
+
+                    pathElements.push(levelNodes[siblingIndex]);
+                    pathIndices.push(leafIndex % 2); // 0 = left, 1 = right
+
+                    leafIndex = Math.floor(leafIndex / 2);
+                }
+
+                return { pathElements, pathIndices };
+            }
+
+            --------------- FOR EXAMPLE:
+            * Let's say your tree[0] (leaves) looks like this:
+                tree[0] = [
+                    "h0", "h1", "h2", "commitment", "h4", "h5", "h6", "h7"
+                ]
+            * You inserted your commitment at index 3.
+                * Then:
+                    * pathIndices = [1, 1, 0]
+                    * pathElements = [h2, Hash(h0, h1), Hash(Hash(h4, h5), Hash(h6, h7))]
+            INPUT JSON:
+            {
+                "nullifier": "123456789",
+                "nullifierHash": "998877665544...",
+                "root": "roothash...",
+                "recipient": "1337",
+                "relayer": "55555",
+                "fee": "1000",
+                "pathIndices": [1, 1, 0],
+                "pathElements": [
+                    "1234567890...",
+                    "2345678901...",
+                    "3456789012..."
+                ]
+            }
+
     ------------------ STEPS:
     * Insert this commitment into your Merkle tree (replace one dummy leaf)
 
