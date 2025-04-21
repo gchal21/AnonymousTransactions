@@ -27,6 +27,7 @@ contract MerkleTreeWithHistory {
     uint32 public nextIndex = 0;
     uint32 public constant ROOT_HISTORY_SIZE = 100;
     bytes32[ROOT_HISTORY_SIZE] public roots;
+    bytes32[] public leaves; // Add this line
 
     constructor(uint32 _treeLevels, address _hasher) {
         require(_treeLevels > 0, "_treeLevels should be greater than zero");
@@ -75,6 +76,7 @@ contract MerkleTreeWithHistory {
             "Merkle tree is full. No more leafs can be added"
         );
         nextIndex += 1;
+        leaves.push(_leaf); // Store the leaf in the leaves array
         bytes32 currentLevelHash = _leaf;
         bytes32 left;
         bytes32 right;
@@ -91,6 +93,7 @@ contract MerkleTreeWithHistory {
             }
 
             currentLevelHash = hashLeftRight(left, right);
+
 
             currentIndex /= 2;
         }
@@ -121,4 +124,34 @@ contract MerkleTreeWithHistory {
     function getLastRoot() public view returns (bytes32) {
         return roots[currentRootIndex];
     }
+
+
+    function getNodeAt(uint level, uint index) public view returns (bytes32) {
+        require(level <= levels, "Level out of bounds");
+        require(index < (1 << level), "Index out of bounds");
+
+        // Start from level 0 (leaves)
+        bytes32[] memory currentLevel = new bytes32[](1 << levels);
+
+        // Fill in the leaves and pad with zeros
+        for (uint i = 0; i < (1 << levels); i++) {
+            if (i < leaves.length) {
+                currentLevel[i] = leaves[i];
+            } else {
+                currentLevel[i] = zeros[0];
+            }
+        }
+
+        // Traverse up the tree until we reach the desired level
+        for (uint l = 0; l < level; l++) {
+            bytes32[] memory nextLevel = new bytes32[](currentLevel.length / 2);
+            for (uint i = 0; i < currentLevel.length; i += 2) {
+                nextLevel[i / 2] = hashLeftRight(currentLevel[i], currentLevel[i + 1]);
+            }
+            currentLevel = nextLevel;
+        }
+
+        return currentLevel[index];
+    }
+
 }
