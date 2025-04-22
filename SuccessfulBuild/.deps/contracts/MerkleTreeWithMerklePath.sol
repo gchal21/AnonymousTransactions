@@ -106,7 +106,7 @@ contract MerkleTreeWithHistory {
         return nextIndex - 1;
     }
 
-    function _getPath() internal view returns (bytes32[] memory) {
+    function _getPath() external view returns (bytes32[] memory) {
         return currentProofPath;
     }
     /**
