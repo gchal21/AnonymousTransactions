@@ -130,28 +130,24 @@ contract MerkleTreeWithHistory {
         require(level <= levels, "Level out of bounds");
         require(index < (1 << level), "Index out of bounds");
 
-        // Start from level 0 (leaves)
-        bytes32[] memory currentLevel = new bytes32[](1 << levels);
-
-        // Fill in the leaves and pad with zeros
-        for (uint i = 0; i < (1 << levels); i++) {
-            if (i < leaves.length) {
-                currentLevel[i] = leaves[i];
+        if (level == levels) {
+            if (index <= leaves.length) {
+                return leaves[index];
             } else {
-                currentLevel[i] = zeros[0];
+                return zeros[level];
             }
         }
 
-        // Traverse up the tree until we reach the desired level
-        for (uint l = 0; l < level; l++) {
-            bytes32[] memory nextLevel = new bytes32[](currentLevel.length / 2);
-            for (uint i = 0; i < currentLevel.length; i += 2) {
-                nextLevel[i / 2] = hashLeftRight(currentLevel[i], currentLevel[i + 1]);
-            }
-            currentLevel = nextLevel;
+        int32 currentLevelAffected = (leaves.length - 1) >> (levels - level);
+
+        if (index > currentLevelAffected) {
+            return zeros[level];
         }
 
-        return currentLevel[index];
+        return hashLeftRight(
+            getNodeAt(level + 1, index * 2),
+            getNodeAt(level + 1, index * 2 + 1)
+        );
     }
 
 }
