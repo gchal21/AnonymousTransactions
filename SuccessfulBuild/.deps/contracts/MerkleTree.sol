@@ -150,4 +150,27 @@ contract MerkleTreeWithHistory {
         );
     }
 
+
+    function getNode(uint level,  uint index) public view returns (bytes32) {
+        require(level <= levels, "Level out of bounds");
+        require(index < (1 << level), "Index out of bounds");
+
+        if(level == 0 && index == 0) {
+            return roots[currentRootIndex];
+        }
+
+        if (level == levels) {
+            if (index <= leaves.length) {
+                return leaves[index];
+            } else {
+                return zeros[levels - level];
+            }
+        }
+
+        return hashLeftRight(
+            getNode(level + 1, index * 2),
+            getNode(level + 1, index * 2 + 1)
+        );
+
+    }
 }

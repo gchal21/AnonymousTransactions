@@ -62,3 +62,5 @@ const hasherAddress = "0x..."; // Step 2 output
 const grigali = await EthGrigali.deploy(verifierAddress, denomination, treeHeight, hasherAddress);
 ```
 
+
+In the merkle tree level 0 is root, when we talk about 20 level merkle tree, we mean that there are 21 layers, first (0th) layer is root and then 20 layers so the number of leaves is 2^20. In zeros array we store the hex values of ZERO_VALUE, in leaves we store the hex of the transaction. So the maximum amount of transactions we can make is the number of nodes on last layer, in case of 20 level Merkle tree it will be 2^20. 
