@@ -1,0 +1,163 @@
+* poseidon hasher smart contract deployed on sepolia (smart contract address) -> [0xC0E119Df844868CA90AC978163475001B666d090] (https://sepolia.etherscan.io/tx/0x344d2bc7f6f97069415bafae39fbe550824c4acb4bb98b71a63faeb42c8256fb)
+
+* zk-snark proof verifier deployed (smart contract address) -> [0x3f74177fde50cb57fe25ac002088d7a79d748be4]
+(https://sepolia.etherscan.io/tx/0x5bfa946e63af04b5752a18c349b66d63d7776d25778531806115e88954cbce00)
+
+* EthGrigali address: [0x9dC77FEcac6cB2868996fCDBDf50508eB1525B70]
+
+* for ETHGrigali deployment.
+Denomination (amount of wei) for example -> 100. (in case of tornado cash, it can transfer only 1 ethereum (1 000 000 000 000 wei). denomication is that value, in our case it can transfer 100 wei)
+
+_verifier => [zk-snark proof verifier address]
+_hasher => [poseidon hasher address]
+_merkleTreeHeight =>  CXADIA ES RAC ARIS
+
+------------------------------------------
+* INTEGRATION SCRIPTS
+
+  * Dependencies:
+      npm install ethers
+      npm install circomlibjs
+  * Execution:
+    node deposit.js
+    akgfhbeakjgheka (acount private key)
+    0x53f5f9969117e82679AdA69fC932b55eCFfBc99D (grigali address)
+    0xC0E119Df844868CA90AC978163475001B666d090 (hasher address NOT NEEDED)
+    https://rpc-sepolia.rockx.com (rpc node)
+    0x28bb28a2c7566e896a177dc7328d4298d197973bcac177fb8291984a1cc43b7f (commitment [node poseidon32.js <private number> 0] right now [node poseidon32.js 1 0])
+
+
+
+
+------------------------------------------------------------- OLD DOCS:
+1)
+    - Poseidon hash algorithm is written in poseidon.js file. (poseidon.js file is runnable with script like this: node poseidon.js 123 0)
+    - dependencies: node must be install because, this script is runnable using node.
+    - circomlibjs library which can be installed using npm install circomlibjs
+2) How to pass parameters correctly to withdraw.circom. (It is needed to generate snark proof for merkle tree membership)
+
+    - nullifierHash     Poseidon(nullifier, 1, index)        *SELF EXAPLANATORY*
+    - nullifier	        Private secret	                     Used for both nullifierHash and commitment (Generated randomly from user side)
+    - commitment	    Poseidon(nullifier, 0)	             Inserted into Merkle tree leaf
+
+            --------------- PATH INDICIES and PATH ELEMENTS (explination is based on example. imagine that tree has 3 levels (8 leaf nodes) and I need proof of index 3 commitment)
+            We already have:
+                * A built Merkle tree (tree[level][i])
+                * The commitment at index 3
+                * The nullifier and nullifierHash (already computed)
+            Now you want:
+                * pathIndices: binary directions to go from the leaf to the root
+                * pathElements: the sibling hashes at each level needed to reconstruct the Merkle root
+
+            Steps:
+                * We're walking up the tree from the leaf at index 3.
+                * Tree depth = 3
+                * So we need:
+                    * 3 pathElements
+                    * 3 pathIndices (bit values)
+                At each level:
+                    * If you're a left child, your sibling is at index + 1, and pathIndex = 1
+                    * If you're a right child, your sibling is at index - 1, and pathIndex = 0
+
+            Level	     Node Index	    Sibling Index	   pathIndex	  pathElement
+             0	              3	              2	               1	        Leaf[2]
+             1	              1	              0	               1	   Hash(Leaf[0], Leaf[1])
+             2	              0	              1	               0	   Hash(Hashes of (4–7))
+
+
+            ---------------- CODE EXAMPLE THAT GENERATES PATH INDICIES AND PATH ELEMENTS
+	//see example in generateIndicesAndElements.js
+
+            function generateIndicesAndElements(tree, leafIndex) {
+                const pathElements = [];
+                const pathIndices = [];
+
+                for (let level = 0; level < tree.length - 1; level++) {
+                    const levelNodes = tree[level];
+                    const siblingIndex = leafIndex ^ 1;
+
+                    pathElements.push(levelNodes[siblingIndex]);
+                    pathIndices.push(leafIndex % 2); // 0 = left, 1 = right
+
+                    leafIndex = Math.floor(leafIndex / 2);
+                }
+
+                return { pathElements, pathIndices };
+            }
+
+            --------------- FOR EXAMPLE:
+            * Let's say your tree[0] (leaves) looks like this:
+                tree[0] = [
+                    "h0", "h1", "h2", "commitment", "h4", "h5", "h6", "h7"
+                ]
+            * You inserted your commitment at index 3.
+                * Then:
+                    * pathIndices = [1, 1, 0]
+                    * pathElements = [h2, Hash(h0, h1), Hash(Hash(h4, h5), Hash(h6, h7))]
+            INPUT JSON:
+            {
+                "nullifier": "123456789",
+                "nullifierHash": "998877665544...",
+                "root": "roothash...",
+                "recipient": "1337",
+                "relayer": "55555",
+                "fee": "1000",
+                "pathIndices": [1, 1, 0],
+                "pathElements": [
+                    "1234567890...",
+                    "2345678901...",
+                    "3456789012..."
+                ]
+            }
+
+    ------------------ STEPS:
+    * Insert this commitment into your Merkle tree (replace one dummy leaf)
+
+    * Track the index where it’s inserted (say, index 3)
+
+    * Later generate the Merkle proof from that index
+
+    * Generate nullifierHash = Poseidon(nullifier, 1, index) — matching our circuit logic
+
+    ------------------ WHAT IS MERKLE TREE INDEX
+
+            Level 2 (root)
+                  ●
+                 / \
+                /   \
+Level 1        ●    ●
+              / \   / \
+Level 0      ●  ● ●   ●
+             |   | |    |
+LEAF NODES:  0   1 2    3
+
+          INDEX        LEAF
+            0    -->  Leaf[0]
+            1    -->  Leaf[1]
+            2    -->  Leaf[2]
+            …    -->  …
+            7    -->  Leaf[7]
+
+    ------------------ CODE EXAMPLE:
+    const { execSync } = require("child_process");
+
+    function poseidon(x, y) {
+    return execSync(`node poseidon.js ${x} ${y}`).toString().trim();
+    }
+
+    // === Depositor's secret ===
+    const nullifier = 987654321n;  // This can be random in real life
+
+    // === Commitment ===
+    // Circom: Poseidon(nullifier, 0)
+    const commitment = poseidon(nullifier, 0n); // This commitment is inserted into merkle tree as leaf node
+
+    console.log("Depositor generated:");
+    console.log("nullifier:", nullifier.toString()); // Raw nullifier
+    console.log("commitment:", commitment); // Commitment: poseidon(nullifier,0)
+
+
+    ------------------ OUTPUT EXAMPLE:
+    Depositor generated:
+    nullifier: 987654321
+    commitment: 11731005986226385971899202873684576899046235560874889900425260070332903225608
