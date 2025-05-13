@@ -18,10 +18,11 @@ _merkleTreeHeight =>  CXADIA ES RAC ARIS
   * Dependencies:
       npm install ethers
       npm install circomlibjs
+      npm install snarkjs
   * Execution:
     node deposit.js
     akgfhbeakjgheka (acount private key)
-    0x53f5f9969117e82679AdA69fC932b55eCFfBc99D (grigali address)
+    0x9dC77FEcac6cB2868996fCDBDf50508eB1525B70 (grigali address)
     0xC0E119Df844868CA90AC978163475001B666d090 (hasher address NOT NEEDED)
     https://rpc-sepolia.rockx.com (rpc node)
     0x28bb28a2c7566e896a177dc7328d4298d197973bcac177fb8291984a1cc43b7f (commitment [node poseidon32.js <private number> 0] right now [node poseidon32.js 1 0])
