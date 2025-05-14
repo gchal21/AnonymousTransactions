@@ -23,7 +23,6 @@ _merkleTreeHeight =>  CXADIA ES RAC ARIS
     node deposit.js
     akgfhbeakjgheka (acount private key)
     0x9dC77FEcac6cB2868996fCDBDf50508eB1525B70 (grigali address)
-    0xC0E119Df844868CA90AC978163475001B666d090 (hasher address NOT NEEDED)
     https://rpc-sepolia.rockx.com (rpc node)
     0x28bb28a2c7566e896a177dc7328d4298d197973bcac177fb8291984a1cc43b7f (commitment [node poseidon32.js <private number> 0] right now [node poseidon32.js 1 0])
 
